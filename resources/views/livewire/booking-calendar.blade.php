@@ -68,21 +68,29 @@
             @foreach ($slots as $slot)
                 @php
                     $isBooked = in_array($slot->id, $bookedSlots, true);
+                    $isPast = in_array($slot->id, $pastSlots, true);
                     $isSelected = $selectedSlot === $slot->id;
+                    $isDisabled = $isBooked || $isPast;
                 @endphp
 
                 <button
                     type="button"
                     wire:click="selectSlot({{ $slot->id }})"
-                    @disabled($isBooked)
+                    @disabled($isDisabled)
                     @class([
                         'min-h-12 border px-3 py-2 text-sm transition duration-200',
-                        'border-[#c9a84c] text-[#f0ece4] hover:bg-[#c9a84c] hover:text-[#0e0e0e]' => ! $isBooked && ! $isSelected,
-                        'border-[#b94a4a] bg-[#1a0a0a] text-[#6b6b6b] line-through cursor-not-allowed' => $isBooked,
+                        'border-[#c9a84c] text-[#f0ece4] hover:bg-[#c9a84c] hover:text-[#0e0e0e]' => ! $isDisabled && ! $isSelected,
+                        'border-[#b94a4a] bg-[#1a0a0a] text-[#6b6b6b] line-through cursor-not-allowed' => $isBooked && ! $isPast,
+                        'border-[#2a2a2a] bg-[#0e0e0e] text-[#6b6b6b] opacity-40 cursor-not-allowed' => $isPast,
                         'border-[#c9a84c] bg-[#c9a84c] font-bold text-[#0e0e0e]' => $isSelected,
                     ])
                 >
-                    {{ $slot->label }} @if ($isBooked) &times; @endif
+                    {{ $slot->label }}
+                    @if ($isBooked && ! $isPast)
+                        &times;
+                    @elseif ($isPast)
+                        <span class="block text-xs">past</span>
+                    @endif
                 </button>
             @endforeach
         </div>

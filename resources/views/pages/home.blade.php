@@ -34,16 +34,21 @@
 
             <div class="grid gap-4 md:grid-cols-2">
                 @foreach ($services as $service)
-                    <article class="border border-[#2a2a2a] bg-[#161616] p-6 transition duration-200 hover:border-l-[#c9a84c] md:p-7">
-                        <div class="flex items-start justify-between gap-4">
+                    <article class="border border-[#2a2a2a] bg-[#161616] transition duration-200 hover:border-l-[#c9a84c]">
+    @if ($service->image_url)
+        <img src="{{ $service->image_url }}" alt="{{ $service->name }}" class="aspect-video w-full object-cover">
+    @endif
+    <div class="p-6 md:p-7">
+        <div class="flex items-start justify-between gap-4">
                             <h3 class="font-serif text-2xl font-bold text-[#f0ece4]">{{ $service->name }}</h3>
                             <div class="text-right">
                                 <p class="font-bold text-[#c9a84c]">{{ number_format($service->price, 0) }}</p>
                                 <p class="text-xs uppercase tracking-wide text-[#6b6b6b]">{{ $service->duration_minutes }} min</p>
                             </div>
                         </div>
-                        <p class="mt-4 leading-7 text-[#f0ece4]/70">{{ $service->description }}</p>
-                    </article>
+                       <p class="mt-4 leading-7 text-[#f0ece4]/70">{{ $service->description }}</p>
+        </div>
+    </article>
                 @endforeach
             </div>
         </div>

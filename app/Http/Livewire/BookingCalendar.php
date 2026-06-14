@@ -22,6 +22,7 @@ class BookingCalendar extends Component
     public ?int $selectedBarber = null;
     public ?int $selectedService = null;
     public array $bookedSlots = [];
+    public array $pastSlots = [];
     public string $customerName = '';
     public string $customerEmail = '';
     public string $customerPhone = '';
@@ -68,12 +69,17 @@ class BookingCalendar extends Component
         $this->selectedSlot = null;
         $this->selectedBarber = null;
         $this->bookedSlots = $this->bookedSlotIdsFor($this->selectedDate);
+        $this->pastSlots = $this->pastSlotIdsFor($this->selectedDate);
         $this->step = 'slots';
     }
 
     public function selectSlot(int $slotId): void
     {
         if (in_array($slotId, $this->bookedSlots, true)) {
+            return;
+        }
+
+        if (in_array($slotId, $this->pastSlots, true)) {
             return;
         }
 
@@ -108,13 +114,11 @@ class BookingCalendar extends Component
 
         if (! Service::active()->whereKey($this->selectedService)->exists()) {
             $this->addError('selectedService', 'Please choose an active service.');
-
             return;
         }
 
         if (! TimeSlot::active()->whereKey($this->selectedSlot)->exists()) {
             $this->addError('selectedSlot', 'Please choose an active time slot.');
-
             return;
         }
 
@@ -144,10 +148,10 @@ class BookingCalendar extends Component
 
         if (! $booking) {
             $this->bookedSlots = $this->bookedSlotIdsFor($this->selectedDate);
+            $this->pastSlots = $this->pastSlotIdsFor($this->selectedDate);
             $this->selectedSlot = null;
             $this->step = 'slots';
             $this->addError('selectedSlot', 'That time was just taken. Please choose another slot.');
-
             return;
         }
 
@@ -166,6 +170,7 @@ class BookingCalendar extends Component
             'selectedBarber',
             'selectedService',
             'bookedSlots',
+            'pastSlots',
             'customerName',
             'customerEmail',
             'customerPhone',
@@ -201,6 +206,7 @@ class BookingCalendar extends Component
         $this->selectedSlot = null;
         $this->selectedBarber = null;
         $this->bookedSlots = [];
+        $this->pastSlots = [];
         $this->step = 'calendar';
     }
 
@@ -243,6 +249,23 @@ class BookingCalendar extends Component
             ->groupBy('time_slot_id')
             ->havingRaw('COUNT(DISTINCT barber_id) >= ?', [$activeBarberCount])
             ->pluck('time_slot_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function pastSlotIdsFor(string $date): array
+    {
+        if ($date !== now()->toDateString()) {
+            return [];
+        }
+
+        return TimeSlot::active()
+            ->get()
+            ->filter(function (TimeSlot $slot) use ($date) {
+                $slotTime = Carbon::parse($date . ' ' . $slot->start_time);
+                return $slotTime->isPast();
+            })
+            ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
     }
@@ -311,7 +334,6 @@ class BookingCalendar extends Component
     {
         if ($this->selectedBarber) {
             $barber = Barber::active()->whereKey($this->selectedBarber)->first();
-
             return $barber?->isAvailableOn($this->selectedDate, $this->selectedSlot) ? $barber->id : null;
         }
 

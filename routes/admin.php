@@ -7,7 +7,7 @@ use App\Http\Controllers\Admin\ServiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
-    ->middleware('auth:admin')
+    ->middleware('admin.auth')
     ->name('admin.')
     ->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
